@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  mopenstack:
+    build: .
+    ports:
+      # Keystone - Identity Service
+      - "5000:5000"
+      # Nova - Compute Service  
+      - "8774:8774"
+      # Neutron - Networking Service
+      - "9696:9696"
+      # Glance - Image Service
+      - "9292:9292"
+      # Cinder - Block Storage Service
+      - "8776:8776"
+      # Swift - Object Storage Service
+      - "8080:8080"
+      # Octavia - Load Balancer Service
+      - "9876:9876"
+      # Designate - DNS Service
+      - "9001:9001"
+    environment:
+      - DEBUG=true
+      - DATABASE_URL=sqlite:///./data/mopenstack.db
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/v3"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # Optional: Add a database service for production
+  # postgres:
+  #   image: postgres:15-alpine
+  #   environment:
+  #     - POSTGRES_DB=mopenstack
+  #     - POSTGRES_USER=mopenstack
+  #     - POSTGRES_PASSWORD=password
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #   ports:
+  #     - "5432:5432"
+
+volumes:
+  postgres_data:
