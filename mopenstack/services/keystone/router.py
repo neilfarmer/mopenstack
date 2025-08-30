@@ -16,6 +16,7 @@ from .schemas import (
     UserCreateRequest,
 )
 from .service import KeystoneService
+from .auth import get_current_user_info
 
 router = APIRouter()
 
@@ -301,7 +302,10 @@ async def get_project(
 
 
 @router.get("/projects")
-async def list_projects(keystone: KeystoneService = Depends(get_keystone_service)):
+async def list_projects(
+    keystone: KeystoneService = Depends(get_keystone_service),
+    user_info: dict = Depends(get_current_user_info)
+):
     """List all projects."""
     projects = keystone.list_projects()
     return {
@@ -375,7 +379,10 @@ async def get_user(
 
 
 @router.get("/users")
-async def list_users(keystone: KeystoneService = Depends(get_keystone_service)):
+async def list_users(
+    keystone: KeystoneService = Depends(get_keystone_service),
+    user_info: dict = Depends(get_current_user_info)
+):
     """List all users."""
     users = keystone.list_users()
     return {"users": [User.model_validate(user).model_dump() for user in users]}

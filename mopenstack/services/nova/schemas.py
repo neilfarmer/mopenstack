@@ -10,11 +10,11 @@ class FlavorBase(BaseModel):
     """Base flavor schema."""
 
     name: str
-    vcpus: int
-    ram: int  # MB
-    disk: int  # GB
-    ephemeral: int = 0  # GB
-    swap: int = 0  # MB
+    vcpus: int = Field(gt=0, description="Number of VCPUs (must be positive)")
+    ram: int = Field(gt=0, description="RAM in MB (must be positive)")
+    disk: int = Field(ge=0, description="Disk size in GB (must be non-negative)")
+    ephemeral: int = Field(ge=0, default=0, description="Ephemeral disk in GB")
+    swap: int = Field(ge=0, default=0, description="Swap space in MB")
     public: bool = True
 
 
@@ -44,7 +44,7 @@ class FlavorCreateRequest(BaseModel):
 class ServerBase(BaseModel):
     """Base server schema."""
 
-    name: str
+    name: str = Field(min_length=1, description="Server name (required)")
     image_ref: str = Field(default="", alias="imageRef")
     flavor_ref: str = Field(default="", alias="flavorRef")
     key_name: Optional[str] = None
@@ -62,8 +62,8 @@ class ServerBase(BaseModel):
 class ServerCreate(ServerBase):
     """Schema for creating a server."""
 
-    image_ref: str = Field(alias="imageRef")
-    flavor_ref: str = Field(alias="flavorRef")
+    image_ref: str = Field(min_length=1, alias="imageRef", description="Image reference (required)")
+    flavor_ref: str = Field(min_length=1, alias="flavorRef", description="Flavor reference (required)")
 
 
 class ServerUpdate(BaseModel):
@@ -93,6 +93,8 @@ class Server(ServerBase):
     tenant_id: Optional[str] = None
     image: Optional[Dict[str, Any]] = None
     flavor: Optional[Dict[str, Any]] = None
+    created: Optional[datetime] = None  # Alias for created_at
+    updated: Optional[datetime] = None  # Alias for updated_at
 
     # For API response, we'll map model fields
     @classmethod
@@ -121,7 +123,9 @@ class Server(ServerBase):
             "metadata": metadata,
             "networks": networks,
             "config_drive": server_model.config_drive,
-            # Add additional fields that OpenStack CLI expects
+            # Add OpenStack CLI compatibility fields
+            "created": server_model.created_at,  # Alias for created_at
+            "updated": server_model.updated_at,  # Alias for updated_at
             "tenant_id": server_model.project_id,  # Alias for project_id
             "image": {"id": server_model.image_id} if server_model.image_id else None,
             "flavor": {"id": server_model.flavor_id} if server_model.flavor_id else None,
@@ -174,9 +178,9 @@ class ServerDelete(ServerAction):
 class KeyPairBase(BaseModel):
     """Base key pair schema."""
 
-    name: str
+    name: str = Field(min_length=1, description="Key pair name (required)")
     public_key: Optional[str] = None
-    type: str = "ssh"
+    type: str = Field(default="ssh", pattern="^(ssh|x509|rsa)$", description="Key type (ssh, x509, or rsa)")
 
 
 class KeyPairCreate(KeyPairBase):

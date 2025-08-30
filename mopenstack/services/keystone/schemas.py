@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import List, Optional
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class DomainBase(BaseModel):
@@ -22,7 +22,7 @@ class Domain(DomainBase):
 
 
 class ProjectBase(BaseModel):
-    name: str
+    name: str = Field(min_length=1, description="Project name (required)")
     description: Optional[str] = None
     enabled: bool = True
     domain_id: Optional[str] = None  # Will default to "Default" domain if not provided
