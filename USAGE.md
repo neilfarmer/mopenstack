@@ -5,26 +5,29 @@ This guide demonstrates how to use MockOpenStack with the OpenStack CLI to manag
 ## Quick Start
 
 1. **Install and start MockOpenStack:**
+
    ```bash
    make quick-start
    make run
    ```
-   
+
    **Note**: If port 5000 is in use, MockOpenStack will automatically start on the next available port (e.g., 5001, 5002). Check the startup message for the actual port.
 
 2. **Install OpenStack CLI:**
+
    ```bash
    pip install python-openstackclient
    ```
 
 3. **Set environment variables (adjust port if needed):**
+
    ```bash
    # If MockOpenStack is running on port 5000 (default)
    export OS_AUTH_URL=http://localhost:5000/v3
-   
+
    # If MockOpenStack is running on a different port (check startup message)
    # export OS_AUTH_URL=http://localhost:5001/v3  # or 5002, etc.
-   
+
    export OS_PROJECT_NAME=admin
    export OS_USERNAME=admin
    export OS_PASSWORD=password
@@ -129,7 +132,7 @@ openstack domain set --description "Updated Corporate Domain" corp
 
 ## Service Catalog
 
-```bash
+````bash
 # List available services
 openstack service list
 
@@ -151,7 +154,7 @@ openstack flavor show m1.medium
 
 # Delete a flavor
 openstack flavor delete m1.medium
-```
+````
 
 ### Servers (Instances)
 
@@ -170,7 +173,7 @@ openstack server set --name renamed-instance test-instance
 
 # Server actions
 openstack server reboot test-instance
-openstack server stop test-instance  
+openstack server stop test-instance
 openstack server start test-instance
 
 # Delete server
@@ -207,12 +210,12 @@ openstack image list
 openstack image show 3394d42a-9583-4c79-9a1b-7bb94ae7dc04
 
 # Show image details by name
-openstack image show "Ubuntu 22.04 LTS"
+openstack image show "ubuntu-22"
 
 # Available images:
-# - Ubuntu 22.04 LTS (3394d42a-9583-4c79-9a1b-7bb94ae7dc04)
-# - CentOS 8 Stream (c8b1e50a-3c91-4d2e-a5f6-8f7b2a9c1d3e)
-# - Debian 12 Bookworm (f2e4d6c8-1a3b-4c5d-9e7f-2b8d4c6e8f0a)
+# - ubuntu-22 (3394d42a-9583-4c79-9a1b-7bb94ae7dc04)
+# - centos-8 (c8b1e50a-3c91-4d2e-a5f6-8f7b2a9c1d3e)
+# - debian-12 (f2e4d6c8-1a3b-4c5d-9e7f-2b8d4c6e8f0a)
 ```
 
 ### Example Workflow: Creating and Managing Instances
@@ -238,7 +241,7 @@ openstack server create \
 # Alternative: Create instance using image name
 openstack server create \
   --flavor test.small \
-  --image "Ubuntu 22.04 LTS" \
+  --image "ubuntu-22" \
   --key-name test-key \
   test-server-alt
 
@@ -260,11 +263,14 @@ openstack flavor delete test.small
 ```
 
 # Show service endpoints
+
 openstack endpoint list
 
 # Get service catalog
+
 openstack catalog list
-```
+
+````
 
 ## Advanced Identity Operations
 
@@ -278,7 +284,7 @@ openstack token revoke <token-id>
 curl -H "X-Auth-Token: <token>" \
      -H "X-Subject-Token: <token-to-validate>" \
      http://localhost:5000/v3/auth/tokens
-```
+````
 
 ### Project Hierarchies
 
@@ -347,93 +353,11 @@ resource "openstack_identity_user_v3" "test_user" {
 ```
 
 Run Terraform:
+
 ```bash
 terraform init
 terraform plan
 terraform apply
-```
-
-### Ansible Example
-
-Create an `openstack-playbook.yml`:
-
-```yaml
----
-- hosts: localhost
-  gather_facts: no
-  vars:
-    auth:
-      auth_url: http://localhost:5000/v3
-      username: admin
-      password: password
-      project_name: admin
-      project_domain_name: Default
-      user_domain_name: Default
-  tasks:
-    - name: Create project
-      openstack.cloud.project:
-        auth: "{{ auth }}"
-        name: ansible-project
-        description: Project created by Ansible
-        state: present
-
-    - name: Create user
-      openstack.cloud.identity_user:
-        auth: "{{ auth }}"
-        name: ansible-user
-        password: ansible123
-        default_project: ansible-project
-        state: present
-```
-
-Run the playbook:
-```bash
-ansible-playbook openstack-playbook.yml
-```
-
-## API Direct Usage
-
-### REST API Examples
-
-```bash
-# Get authentication token via API
-curl -X POST http://localhost:5000/v3/auth/tokens \
-  -H "Content-Type: application/json" \
-  -d '{
-    "auth": {
-      "identity": {
-        "methods": ["password"],
-        "password": {
-          "user": {
-            "name": "admin",
-            "domain": {"name": "Default"},
-            "password": "password"
-          }
-        }
-      },
-      "scope": {
-        "project": {
-          "name": "admin",
-          "domain": {"name": "Default"}
-        }
-      }
-    }
-  }'
-
-# List projects via API (replace TOKEN with actual token)
-curl -H "X-Auth-Token: TOKEN" \
-     http://localhost:5000/v3/projects
-
-# Create project via API
-curl -X POST http://localhost:5000/v3/projects \
-  -H "X-Auth-Token: TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "project": {
-      "name": "api-project",
-      "description": "Project created via API"
-    }
-  }'
 ```
 
 ## Development Workflow
@@ -441,16 +365,19 @@ curl -X POST http://localhost:5000/v3/projects \
 ### Testing OpenStack Applications
 
 1. **Start MockOpenStack:**
+
    ```bash
    make run
    ```
 
 2. **Set up your test environment:**
+
    ```bash
    source openstack-env.sh  # Your environment file
    ```
 
 3. **Run your application tests:**
+
    ```bash
    python test_openstack_app.py
    ```
@@ -475,12 +402,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      
+
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
           python-version: 3.9
-          
+
       - name: Start MockOpenStack
         run: |
           git clone https://github.com/your-org/mopenstack
@@ -488,7 +415,7 @@ jobs:
           make quick-start
           make run &
           sleep 5  # Wait for server to start
-          
+
       - name: Run OpenStack tests
         env:
           OS_AUTH_URL: http://localhost:5000/v3
@@ -508,19 +435,21 @@ jobs:
 ### Common Issues
 
 1. **Connection refused:**
+
    ```bash
    # Check if MockOpenStack is running
    curl http://localhost:5000/health
-   
+
    # Check what's using the port
    make check-port
    ```
 
 2. **Authentication failed:**
+
    ```bash
    # Verify credentials
    openstack --debug token issue
-   
+
    # Reset bootstrap data
    make clean
    make bootstrap
@@ -561,6 +490,7 @@ echo "User: $OS_USERNAME"
 ```
 
 Use it:
+
 ```bash
 source openstack-env.sh
 openstack token issue
@@ -594,7 +524,7 @@ openstack token issue
 
 - ✅ **Keystone (Identity)** - Fully implemented
 - 🚧 **Nova (Compute)** - Models ready, API pending
-- 🚧 **Neutron (Network)** - Models ready, API pending  
+- 🚧 **Neutron (Network)** - Models ready, API pending
 - 🚧 **Glance (Image)** - Planned
 - 🚧 **Cinder (Block Storage)** - Planned
 - 🚧 **Swift (Object Storage)** - Planned

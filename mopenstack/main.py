@@ -80,7 +80,7 @@ glance_router = APIRouter()
 MOCK_IMAGES = {
     "3394d42a-9583-4c79-9a1b-7bb94ae7dc04": {
         "id": "3394d42a-9583-4c79-9a1b-7bb94ae7dc04",
-        "name": "Ubuntu 22.04 LTS",
+        "name": "ubuntu-22",
         "status": "active",
         "visibility": "public",
         "container_format": "bare",
@@ -91,7 +91,7 @@ MOCK_IMAGES = {
     },
     "c8b1e50a-3c91-4d2e-a5f6-8f7b2a9c1d3e": {
         "id": "c8b1e50a-3c91-4d2e-a5f6-8f7b2a9c1d3e", 
-        "name": "CentOS 8 Stream",
+        "name": "centos-8",
         "status": "active",
         "visibility": "public",
         "container_format": "bare",
@@ -102,7 +102,7 @@ MOCK_IMAGES = {
     },
     "f2e4d6c8-1a3b-4c5d-9e7f-2b8d4c6e8f0a": {
         "id": "f2e4d6c8-1a3b-4c5d-9e7f-2b8d4c6e8f0a",
-        "name": "Debian 12 Bookworm",
+        "name": "debian-12",
         "status": "active", 
         "visibility": "public",
         "container_format": "bare",

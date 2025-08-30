@@ -36,7 +36,7 @@ class TestGlanceMockService:
 
     def test_list_images_with_name_filter(self, client):
         """Test listing images with name filter."""
-        response = client.get("/v2/images?name=Ubuntu 22.04 LTS")
+        response = client.get("/v2/images?name=ubuntu-22")
         assert response.status_code == 200
         
         data = response.json()
@@ -44,7 +44,7 @@ class TestGlanceMockService:
         assert len(images) >= 1
         
         # Should contain the Ubuntu image
-        ubuntu_found = any(img["name"] == "Ubuntu 22.04 LTS" for img in images)
+        ubuntu_found = any(img["name"] == "ubuntu-22" for img in images)
         assert ubuntu_found
 
     def test_get_image_by_uuid(self, client):
@@ -55,7 +55,7 @@ class TestGlanceMockService:
         
         image = response.json()
         assert image["id"] == ubuntu_uuid
-        assert image["name"] == "Ubuntu 22.04 LTS"
+        assert image["name"] == "ubuntu-22"
         assert image["status"] == "active"
         assert image["container_format"] == "bare"
         assert image["disk_format"] == "qcow2"
@@ -67,7 +67,7 @@ class TestGlanceMockService:
         
         image = response.json()
         assert image["id"] == "3394d42a-9583-4c79-9a1b-7bb94ae7dc04"
-        assert image["name"] == "Ubuntu 22.04 LTS"
+        assert image["name"] == "ubuntu-22"
 
     def test_get_nonexistent_image(self, client):
         """Test getting non-existent image returns 404."""
@@ -82,15 +82,15 @@ class TestGlanceMockService:
         expected_images = [
             {
                 "id": "3394d42a-9583-4c79-9a1b-7bb94ae7dc04",
-                "name": "Ubuntu 22.04 LTS"
+                "name": "ubuntu-22"
             },
             {
                 "id": "c8b1e50a-3c91-4d2e-a5f6-8f7b2a9c1d3e", 
-                "name": "CentOS 8 Stream"
+                "name": "centos-8"
             },
             {
                 "id": "f2e4d6c8-1a3b-4c5d-9e7f-2b8d4c6e8f0a",
-                "name": "Debian 12 Bookworm"
+                "name": "debian-12"
             }
         ]
         
