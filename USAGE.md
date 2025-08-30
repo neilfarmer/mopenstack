@@ -133,6 +133,132 @@ openstack domain set --description "Updated Corporate Domain" corp
 # List available services
 openstack service list
 
+## Nova (Compute Service)
+
+### Flavors
+
+Flavors define the compute, memory, and storage capacity of nova computing instances.
+
+```bash
+# Create a flavor
+openstack flavor create --vcpus 2 --ram 4096 --disk 20 m1.medium
+
+# List all flavors
+openstack flavor list
+
+# Show flavor details
+openstack flavor show m1.medium
+
+# Delete a flavor
+openstack flavor delete m1.medium
+```
+
+### Servers (Instances)
+
+```bash
+# Create a server (instance)
+openstack server create --flavor m1.small --image cirros-0.6.2 --key-name mykey test-instance
+
+# List all servers
+openstack server list
+
+# Show server details
+openstack server show test-instance
+
+# Update server name
+openstack server set --name renamed-instance test-instance
+
+# Server actions
+openstack server reboot test-instance
+openstack server stop test-instance  
+openstack server start test-instance
+
+# Delete server
+openstack server delete test-instance
+```
+
+### Key Pairs
+
+SSH key pairs for server access:
+
+```bash
+# Create a key pair
+openstack keypair create --public-key ~/.ssh/id_rsa.pub mykey
+
+# List key pairs
+openstack keypair list
+
+# Show key pair details
+openstack keypair show mykey
+
+# Delete key pair
+openstack keypair delete mykey
+```
+
+### Images
+
+MockOpenStack provides several pre-configured images with proper UUIDs:
+
+```bash
+# List available images
+openstack image list
+
+# Show image details by UUID
+openstack image show 3394d42a-9583-4c79-9a1b-7bb94ae7dc04
+
+# Show image details by name
+openstack image show "Ubuntu 22.04 LTS"
+
+# Available images:
+# - Ubuntu 22.04 LTS (3394d42a-9583-4c79-9a1b-7bb94ae7dc04)
+# - CentOS 8 Stream (c8b1e50a-3c91-4d2e-a5f6-8f7b2a9c1d3e)
+# - Debian 12 Bookworm (f2e4d6c8-1a3b-4c5d-9e7f-2b8d4c6e8f0a)
+```
+
+### Example Workflow: Creating and Managing Instances
+
+```bash
+# 1. Create a flavor
+openstack flavor create --vcpus 1 --ram 1024 --disk 10 test.small
+
+# 2. Create a key pair
+openstack keypair create --public-key ~/.ssh/id_rsa.pub test-key
+
+# 3. List available images (note: proper UUIDs are used)
+openstack image list
+
+# 4. Create an instance
+openstack server create \
+  --flavor test.small \
+  --image 3394d42a-9583-4c79-9a1b-7bb94ae7dc04 \
+  --key-name test-key \
+  --property test=value \
+  test-server
+
+# Alternative: Create instance using image name
+openstack server create \
+  --flavor test.small \
+  --image "Ubuntu 22.04 LTS" \
+  --key-name test-key \
+  test-server-alt
+
+# 4. Check server status
+openstack server list
+
+# 5. Show detailed server information
+openstack server show test-server
+
+# 6. Perform server actions
+openstack server reboot test-server
+openstack server stop test-server
+openstack server start test-server
+
+# 7. Clean up
+openstack server delete test-server
+openstack keypair delete test-key
+openstack flavor delete test.small
+```
+
 # Show service endpoints
 openstack endpoint list
 

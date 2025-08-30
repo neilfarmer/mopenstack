@@ -48,7 +48,8 @@ class KeystoneService:
                 domain_id = default_domain.id
             else:
                 raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND, detail="Default domain not found"
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Default domain not found",
                 )
 
         # Verify domain exists
@@ -70,13 +71,26 @@ class KeystoneService:
         """Get project by ID."""
         return self.db.query(Project).filter(Project.id == project_id).first()
 
+    def get_project_by_name(self, project_name: str) -> Optional[Project]:
+        """Get project by name."""
+        return self.db.query(Project).filter(Project.name == project_name).first()
+
+    def _resolve_project(self, project_identifier: str) -> Optional[Project]:
+        """Resolve project by ID or name."""
+        project = self.get_project(project_identifier)
+        if not project:
+            project = self.get_project_by_name(project_identifier)
+        return project
+
     def list_projects(self) -> List[Project]:
         """List all projects."""
         return self.db.query(Project).all()
 
-    def update_project(self, project_id: str, project_data: ProjectUpdate) -> Optional[Project]:
-        """Update a project."""
-        db_project = self.get_project(project_id)
+    def update_project(
+        self, project_identifier: str, project_data: ProjectUpdate
+    ) -> Optional[Project]:
+        """Update a project by ID or name."""
+        db_project = self._resolve_project(project_identifier)
         if not db_project:
             return None
 
@@ -89,9 +103,9 @@ class KeystoneService:
         self.db.refresh(db_project)
         return db_project
 
-    def delete_project(self, project_id: str) -> bool:
-        """Delete a project."""
-        db_project = self.get_project(project_id)
+    def delete_project(self, project_identifier: str) -> bool:
+        """Delete a project by ID or name."""
+        db_project = self._resolve_project(project_identifier)
         if not db_project:
             return False
 
@@ -113,7 +127,8 @@ class KeystoneService:
                 domain_id = default_domain.id
             else:
                 raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND, detail="Default domain not found"
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Default domain not found",
                 )
 
         # Verify domain exists

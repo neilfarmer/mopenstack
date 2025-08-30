@@ -14,6 +14,22 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 # Set environment variable to suppress bcrypt warnings at the C level
 os.environ["PYTHONWARNINGS"] = "ignore"
 
+# Fix bcrypt version detection issue
+def fix_bcrypt_version():
+    """Fix bcrypt version detection for passlib compatibility."""
+    try:
+        import bcrypt
+        if not hasattr(bcrypt, '__about__'):
+            # Create a mock __about__ module with version
+            class MockAbout:
+                __version__ = getattr(bcrypt, '__version__', '4.0.0')
+            bcrypt.__about__ = MockAbout()
+    except ImportError:
+        pass
+
+# Apply bcrypt fix before any imports
+fix_bcrypt_version()
+
 # Capture all stderr output during imports
 original_stderr = sys.stderr
 captured_stderr = io.StringIO()
@@ -48,11 +64,7 @@ def create_default_domain(db: Session) -> Domain:
 
 def create_admin_project(db: Session, domain: Domain) -> Project:
     """Create admin project."""
-    project = (
-        db.query(Project)
-        .filter(Project.name == settings.admin_project)
-        .first()
-    )
+    project = db.query(Project).filter(Project.name == settings.admin_project).first()
     if not project:
         project = Project(
             name=settings.admin_project,
@@ -70,9 +82,7 @@ def create_admin_user(db: Session, domain: Domain, project: Project) -> User:
     """Create admin user."""
     admin_user = (
         db.query(User)
-        .filter(
-            User.name == settings.admin_username, User.domain_id == domain.id
-        )
+        .filter(User.name == settings.admin_username, User.domain_id == domain.id)
         .first()
     )
     if not admin_user:
@@ -96,9 +106,7 @@ def create_default_roles(db: Session):
     for role_name in roles:
         role = db.query(Role).filter(Role.name == role_name).first()
         if not role:
-            role = Role(
-                name=role_name, description=f"{role_name.capitalize()} role"
-            )
+            role = Role(name=role_name, description=f"{role_name.capitalize()} role")
             db.add(role)
     db.commit()
 

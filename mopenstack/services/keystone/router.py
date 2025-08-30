@@ -3,21 +3,16 @@
 from fastapi import APIRouter, Depends, Header, HTTPException, Request, Response, status
 from sqlalchemy.orm import Session
 
-from ...common.config import settings
 from ...common.database import get_db
 from .schemas import (
     AuthRequest,
     Domain,
-    DomainBase,
     DomainCreateRequest,
     Project,
-    ProjectBase,
     ProjectCreateRequest,
-    ProjectUpdate,
     ProjectUpdateRequest,
     ServiceCatalogEntry,
     User,
-    UserCreate,
     UserCreateRequest,
 )
 from .service import KeystoneService
@@ -35,15 +30,13 @@ async def get_version_info(request: Request):
     """Get Keystone version information."""
     port = request.url.port or 5000
     base_url = f"http://localhost:{port}"
-    
+
     return {
         "version": {
             "id": "v3.14",
             "status": "stable",
             "updated": "2023-01-01T00:00:00Z",
-            "links": [
-                {"rel": "self", "href": f"{base_url}/v3"}
-            ],
+            "links": [{"rel": "self", "href": f"{base_url}/v3"}],
             "media-types": [
                 {
                     "base": "application/json",
@@ -117,7 +110,6 @@ async def create_token(
         db_token, access_token = keystone.create_token(user, project_id)
 
         # Get the actual running port from the request
-        host = request.client.host if request.client else "localhost"
         port = request.url.port or 5000
         base_url = f"http://localhost:{port}"
 
@@ -153,6 +145,17 @@ async def create_token(
                         "id": "neutron-public",
                         "interface": "public",
                         "url": f"{base_url}/v2.0",
+                    }
+                ],
+            ),
+            ServiceCatalogEntry(
+                type="image",
+                name="glance",
+                endpoints=[
+                    {
+                        "id": "glance-public",
+                        "interface": "public",
+                        "url": f"{base_url}/v2",
                     }
                 ],
             ),
@@ -236,7 +239,8 @@ async def validate_token(
 # Domain endpoints
 @router.post("/domains", response_model=dict)
 async def create_domain(
-    domain_request: DomainCreateRequest, keystone: KeystoneService = Depends(get_keystone_service)
+    domain_request: DomainCreateRequest,
+    keystone: KeystoneService = Depends(get_keystone_service),
 ):
     """Create a new domain."""
     db_domain = keystone.create_domain(domain_request.domain)
@@ -269,26 +273,26 @@ async def list_domains(keystone: KeystoneService = Depends(get_keystone_service)
 @router.post("/projects")
 async def create_project(
     request: Request,
-    project_request: ProjectCreateRequest, 
-    keystone: KeystoneService = Depends(get_keystone_service)
+    project_request: ProjectCreateRequest,
+    keystone: KeystoneService = Depends(get_keystone_service),
 ):
     """Create a new project."""
     db_project = keystone.create_project(project_request.project)
     port = request.url.port or 5000
     base_url = f"http://localhost:{port}"
-    
+
     project_data = Project.model_validate(db_project).model_dump()
     project_data["links"] = {"self": f"{base_url}/v3/projects/{db_project.id}"}
-    
+
     return {"project": project_data}
 
 
-@router.get("/projects/{project_id}")
+@router.get("/projects/{project_identifier}")
 async def get_project(
-    project_id: str, keystone: KeystoneService = Depends(get_keystone_service)
+    project_identifier: str, keystone: KeystoneService = Depends(get_keystone_service)
 ):
-    """Get project by ID."""
-    project = keystone.get_project(project_id)
+    """Get project by ID or name."""
+    project = keystone._resolve_project(project_identifier)
     if not project:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Project not found"
@@ -307,48 +311,50 @@ async def list_projects(keystone: KeystoneService = Depends(get_keystone_service
     }
 
 
-@router.patch("/projects/{project_id}")
+@router.patch("/projects/{project_identifier}")
 async def update_project(
     request: Request,
-    project_id: str,
+    project_identifier: str,
     project_request: ProjectUpdateRequest,
-    keystone: KeystoneService = Depends(get_keystone_service)
+    keystone: KeystoneService = Depends(get_keystone_service),
 ):
-    """Update project by ID."""
-    updated_project = keystone.update_project(project_id, project_request.project)
+    """Update project by ID or name."""
+    updated_project = keystone.update_project(
+        project_identifier, project_request.project
+    )
     if not updated_project:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Project not found"
         )
-    
+
     port = request.url.port or 5000
     base_url = f"http://localhost:{port}"
-    
+
     project_data = Project.model_validate(updated_project).model_dump()
     project_data["links"] = {"self": f"{base_url}/v3/projects/{updated_project.id}"}
-    
+
     return {"project": project_data}
 
 
-@router.delete("/projects/{project_id}")
+@router.delete("/projects/{project_identifier}")
 async def delete_project(
-    project_id: str,
-    keystone: KeystoneService = Depends(get_keystone_service)
+    project_identifier: str, keystone: KeystoneService = Depends(get_keystone_service)
 ):
-    """Delete project by ID."""
-    success = keystone.delete_project(project_id)
+    """Delete project by ID or name."""
+    success = keystone.delete_project(project_identifier)
     if not success:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Project not found"
         )
-    
+
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 # User endpoints
 @router.post("/users")
 async def create_user(
-    user_request: UserCreateRequest, keystone: KeystoneService = Depends(get_keystone_service)
+    user_request: UserCreateRequest,
+    keystone: KeystoneService = Depends(get_keystone_service),
 ):
     """Create a new user."""
     db_user = keystone.create_user(user_request.user)
@@ -372,6 +378,4 @@ async def get_user(
 async def list_users(keystone: KeystoneService = Depends(get_keystone_service)):
     """List all users."""
     users = keystone.list_users()
-    return {
-        "users": [User.model_validate(user).model_dump() for user in users]
-    }
+    return {"users": [User.model_validate(user).model_dump() for user in users]}
